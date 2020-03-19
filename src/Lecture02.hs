@@ -233,8 +233,7 @@ foldr f initial (head :. tail) = f head (foldr f initial tail)
   Реализуйте с помощью `foldr`.
 -}
 map :: (a -> b) -> List a -> List b
-map _ Nil = Nil
-map f (head :. tail) = f head :. map f tail
+map f l = foldr (\x a -> f x :. a) Nil l
 
 {-
   `filter` принимает предикат `f` и список, возвращая список с элементами
@@ -247,8 +246,7 @@ map f (head :. tail) = f head :. map f tail
   Реализуйте с помощью `foldr`.
 -}
 filter :: (a -> Bool) -> List a -> List a
-filter _ Nil = Nil
-filter f l = foldr (\head tail -> if f head then head :. tail else tail) Nil l
+filter f l = foldr (\x a -> if f x then x :. a else a) Nil l
 
 {-
   Правая свёртка действует на список справа, с конца.
@@ -303,8 +301,7 @@ foldl f initial (head :. tail) = foldl f (f initial head) tail
   Реализуйте с помощью `foldl`.
 -}
 reverse :: List a -> List a
-reverse Nil = Nil
-reverse l = foldl (\tail head -> head :. tail) Nil l
+reverse l = foldl (\a x -> x :. a) Nil l
 
 {-
   Пришло время перейти к стандартным спискам. Напишите функцию, которая
