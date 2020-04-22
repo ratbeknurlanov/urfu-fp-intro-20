@@ -9,7 +9,7 @@ module Lecture06 where
   - классифицировать виды полиморфизма
     - interfaces, +, -, классы типов
       - это будет потом
-  
+
   - system f
   - a -> a, a -> [a]
     - higher rank полиморфизм
@@ -21,9 +21,9 @@ module Lecture06 where
   - generics
     - выразительность
     - ограничения
-  
+
   - разница между parametricity и generics
-    - сильные ограничения => сильные гарантии => новая информация 
+    - сильные ограничения => сильные гарантии => новая информация
     - выразительность != мощность (generic'и не менее сильны в плане выразительности,
       но дают меньшие гарантии и поэтому в некотором смысле уступают)
     - tradeoff
@@ -71,7 +71,7 @@ module Lecture06 where
         | false
         | 0
         | ...
-  
+
   Нам понадобится понятие контекста.
   Контекст (typing context, также typing environment) — набор предположений
   о типах свободных переменных в терме.
@@ -94,7 +94,7 @@ module Lecture06 where
                     Г ⊢ t : T' -> T   Г ⊢ t' : T'
       (T-App)   -------------------------------------
                             Г ⊢ t t' : T
-      
+
                   Г, x : T  ⊢  t : T'     -- из контекста следует, что t имеет тип T'2'
       (T-Abs)   -----------------------
                  Г ⊢ λx:T.t : T -> T'
@@ -108,7 +108,7 @@ module Lecture06 where
     ⊢ λx:Bool.x : Bool -> Bool            ⊢ true : Bool
     ------------------------------------------------------ T-App
                   ⊢ (λx:Bool.x) true : Bool
-    
+
     Обратите внимание, что аннотации типов есть только в определениях связанных
     переменных. В каком смысле этого «достаточно»?
 
@@ -130,6 +130,11 @@ module Lecture06 where
   если нет, то докажите это (напишите, почему)
 
   *Решение*
+  Не существует.
+  Рассмотрим Γ ⊢ x x : T, пусть правый x имеет тип T' x:T', тогда левый x должен иметь тип T' -> T.
+  По теореме о единственности типов x должен пренадлежать контексту Г и иметь там единственный тип. А у нас получилось так, что x имеет 2 типа T' и T'->T,
+  чего не может быть т.к мы получаем T' = T'-> T, где T' подвыражение самого себя. Если сказать, что T' в правой части имеет арность n,
+  то получится, что T' слева имеет арность n + 1
 -}
 -- </Задачи для самостоятельного решения>
 
@@ -168,7 +173,7 @@ module Lecture06 where
 
   Теорема (Сохранение).
   Если Г ⊢ t : T и t -> t′, то Г ⊢ t′ : T.
-  
+
   Другими словами вычисление не меняет тип терма.
 
   Ещё один важнеший результат — теорема о нормальной форме.
@@ -185,7 +190,7 @@ module Lecture06 where
     erase (x) = x
     erase (λx:T1.t2) = λx.erase (t2)
     erase (t1 t2) = (erase (t1)) (erase (t2))
-  
+
   Можно доказать, что после выполнения такой функции типизированный терм становится
   корректным термом бестипового лямбда-исчисления.
 
@@ -220,7 +225,7 @@ module Lecture06 where
   Если говорить в общем, то полиморфизм это способность кода работать для разных
   типов. И реализован он может быть по-разному. В этих лекциях мы посмотрим
   по крайней мере на три вида полиморфизма.
-  
+
   Попробуем реализовать полиморфизм в нашей системе.
   Добавим к базовым типам некий тип X, которым будем пользоваться так же, как
   типами Bool или Numeral, но определять не будем:
@@ -228,7 +233,7 @@ module Lecture06 where
       T ::=
             X
           | ...
-  
+
   Тогда мы бы могли определить тип [] как [X], где X — переменная типа.
   Допустим у нас есть некий терм t, в типе которого участвует такая переменная X.
   Тогда мы можем задать два существенно различных вопроса о типе t:
@@ -241,12 +246,12 @@ module Lecture06 where
   Например, рассмотрим вот такой терм с двумя типовыми переменными X и Y:
 
     λf:Y. λa:X. f (f a)
-  
+
   очевидно, что на вопрос 1. ответ — "нет". Действительно при X = Bool, а Y = Char,
   получим нечто невыводимое в нашей системе типов:
-      
+
     λf:Char. λa:Bool. f (f a)
-  
+
   Однако, если заменить Y на X->X, получится правильный типизированный терм:
 
     λf:X->X. λa:X. f (f a) -- типизируем даже в смысле 1. несмотря на переменную X
@@ -326,7 +331,10 @@ module Lecture06 where
   Убедитесь, что selfApp работает. Приведите терм `selfApp id` в нормальную форму
   и запишите все шаги β-редукции ->β.
 
-  selfApp id = ... ->β ...
+  selfApp id = (λx:∀X.X->X.x [∀X.X->X] x) (ΛX. λx:X.x)
+                  ->β (ΛX. λx:X.x) [∀X.X->X] (ΛX. λx:X.x)
+                  ->β (λx:∀X.X->X.x) (ΛX. λx:X.x)
+                  ->β (ΛX. λx:X.x)
 -}
 -- </Задачи для самостоятельного решения>
 
@@ -335,7 +343,7 @@ module Lecture06 where
   Обычно, в Haskell пропускается квантор всеобщности, подразумевается, что он
   применяется ко всем типовым переменным полиморфных функций. Но можно включить
   явный forall (вместо ∀) при выводе типов:
- 
+
     > :t []
     [] :: [a]
     >:set -fprint-explicit-foralls
@@ -448,7 +456,7 @@ module Lecture06 where
 
 
     Шаблоны/Generic/Template
-    
+
     List<T> Reverse<T>(List<T> list)
     {
       ...
@@ -473,7 +481,7 @@ module Lecture06 where
       f :: a -> a           -- или, можно по-дргому
       f :: forall a. a -> a -- или, то же самое в System F
       f : ∀X.X -> X
-    
+
     Что может делать такая функция? Что-нибудь придумали?
     Убедитесь, что то, что вы придумали работает и для строк, и для чисел,
     и для таплов, и для функций. Придумали?
@@ -491,7 +499,7 @@ module Lecture06 where
     Что же мы можем сказать по аналогичному типу в C#:
 
       List<T> R<T>(List<T> list)
-    
+
     Наверняка? Ни-че-го. Конечно, можно придерживаться каких-то правил,
     соглашений, паттернов и т.д. Но внутри может быть что-то такое:
 
@@ -502,7 +510,7 @@ module Lecture06 where
         else if (a[i] is Integer integer) { ... }
         ...
       }
-    
+
     И не только это. Такой полиморфизм не удовлетворяет главному требованию
     параметрического полиморфизма — одинаковая работа для всех типов.
     Он может быть таким, но вы не можете быть в этом уверены наверняка.
@@ -535,9 +543,9 @@ module Lecture06 where
 
     Рассмотрим только один пример из этой статьи. Пусть у нас есть функции r и q:
 
-      r : ∀X.[X] -> [X]   
+      r : ∀X.[X] -> [X]
       q : ∀X.∀Y.X -> Y
-      
+
     Тогда `q . map r = r . map q`. -- r слева и справа конкретиризуется для разных типов.
     Интуитивно, мы понимаем, что можно сначала переупорядочить (что-то такое, наверное,
     делает r) элементы списка, а потом отобразить, или сначала отобразить,
@@ -551,7 +559,7 @@ module Lecture06 where
 
     Язык позволяет нам "подкрутить" детали в зависимости от конкретного типа.
     Это довольно удобно. Вы наверняка не раз пользовались конструкциями as, is, typeof.
-    В Haskell так нельзя (нужны классы типов, но это не то же самое). 
+    В Haskell так нельзя (нужны классы типов, но это не то же самое).
 
     На самом деле, в C# вы можете выбрать инструмент под задачу.
     Сделать одно и то же разными способами в зависимости от того, как удобно или хочется.
@@ -578,16 +586,16 @@ module Lecture06 where
 -}
 
 f :: [a] -> Int
-f = error "not implemented"
+f xs = length xs
 
 g :: (a -> b)->[a]->[b]
-g = error "not implemented"
+g xs f = map xs f
 
 q :: a -> a -> a
-q x y = error "not implemented"
+q x y = x
 
 p :: (a -> b) -> (b -> c) -> (a -> c)
-p f g = error "not implemented"
+p f g = \x -> g (f x)
 
 {-
   Крестики-нолики Чёрча.
@@ -597,7 +605,7 @@ p f g = error "not implemented"
 
     > :load src/Lecture06/XsOs.hs
     > startXsOs
-  
+
   Но для её запуска нужно хоть как-нибудь реализовать функции ниже.
 -}
 
@@ -624,7 +632,10 @@ createRow x y z = \case
   Third -> z
 
 createField :: Row -> Row -> Row -> Field
-createField x y z = error "not implemented"
+createField x y z = \case
+  First -> x
+  Second -> y
+  Third -> z
 
 -- Чтобы было с чего начинать проверять ваши функции
 emptyField :: Field
@@ -633,17 +644,54 @@ emptyField = createField emptyLine emptyLine emptyLine
     emptyLine = createRow Empty Empty Empty
 
 setCellInRow :: Row -> Index -> Value -> Row
-setCellInRow r i v = error "not implemented"
+setCellInRow r i v = \case
+  indx | indx == i -> v
+  indx -> r indx
 
 -- Возвращает новое игровое поле, если клетку можно занять.
 -- Возвращает ошибку, если место занято.
 setCell :: Field -> Index -> Index -> Value -> Either String Field
-setCell field i j v = error "not implemented"
+setCell field i j v =
+  case fieldValue of
+    -- Empty -> Right (\row -> setCellInRow (field row) j v)
+    Empty -> Right (\row -> case row of
+                              indx | indx == i -> setCellInRow (field indx) j v
+                              indx -> field row)
+    Zero -> Left ("There is '" ++ (show Zero) ++ "' on " ++ (show i) ++ " " ++ (show j))
+    Cross -> Left ("There is '" ++ (show Cross) ++ "' on " ++ (show i) ++ " " ++ (show j))
+    where
+      fieldValue = field i j
 
 data GameState = InProgress | Draw | XsWon | OsWon deriving (Eq, Show)
 
 getGameState :: Field -> GameState
-getGameState field = error "not implemented"
+getGameState field = case ((field First First, field First Second, field First Third), (field Second First, field Second Second, field Second Third), (field Third First, field Third Second, field Third Third)) of
+  ((Zero, Zero, Zero), (_, _, _), (_, _, _)) -> OsWon
+  ((_, _, _), (Zero, Zero, Zero), (_, _, _)) -> OsWon
+  ((_, _, _), (_, _, _), (Zero, Zero, Zero)) -> OsWon
+  ((Zero, _, _), (Zero, _, _), (Zero, _, _)) -> OsWon
+  ((_, Zero, _), (_, Zero, _), (_, Zero, _)) -> OsWon
+  ((_, _, Zero), (_, _, Zero), (_, _, Zero)) -> OsWon
+  ((Zero, _, _), (_, Zero, _), (_, _, Zero)) -> OsWon
+  ((_, _, Zero), (_, Zero, _), (Zero, _, _)) -> OsWon
+  ((Cross, Cross, Cross), (_, _, _), (_, _, _)) -> XsWon
+  ((_, _, _), (Cross, Cross, Cross), (_, _, _)) -> XsWon
+  ((_, _, _), (_, _, _), (Cross, Cross, Cross)) -> XsWon
+  ((Cross, _, _), (Cross, _, _), (Cross, _, _)) -> XsWon
+  ((_, Cross, _), (_, Cross, _), (_, Cross, _)) -> XsWon
+  ((_, _, Cross), (_, _, Cross), (_, _, Cross)) -> XsWon
+  ((Cross, _, _), (_, Cross, _), (_, _, Cross)) -> XsWon
+  ((_, _, Cross), (_, Cross, _), (Cross, _, _)) -> XsWon
+  ((Empty, _, _), (_, _, _), (_, _, _)) -> InProgress
+  ((_, Empty, _), (_, _, _), (_, _, _)) -> InProgress
+  ((_, _, Empty), (_, _, _), (_, _, _)) -> InProgress
+  ((_, _, _), (Empty, _, _), (_, _, _)) -> InProgress
+  ((_, _, _), (_, Empty, _), (_, _, _)) -> InProgress
+  ((_, _, _), (_, _, Empty), (_, _, _)) -> InProgress
+  ((_, _, _), (_, _, _), (Empty, _, _)) -> InProgress
+  ((_, _, _), (_, _, _), (_, Empty, _)) -> InProgress
+  ((_, _, _), (_, _, _), (_, _, Empty)) -> InProgress
+  _ -> Draw
 
 -- </Задачи для самостоятельного решения>
 
