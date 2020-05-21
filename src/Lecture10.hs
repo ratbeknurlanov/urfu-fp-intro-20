@@ -100,15 +100,22 @@ sqrtListComprehensions list = [ x^2 | x <- list ]
 
 -- "Наивная" версия с использованием map'ов
 cartesianProduct :: [a] -> [b] -> [(a,b)]
-cartesianProduct xs ys = error "not implemented"
+cartesianProduct [] _ = []
+cartesianProduct _ [] = []
+cartesianProduct xs ys = concatMap (\x -> map (\y -> (x,y)) ys) xs
 
 -- По аналогии с функцией sqrtList перепишите cartesianProduct с использованием return и (=<<)
 cartesianProductMonad :: [a] -> [b] -> [(a,b)]
-cartesianProductMonad xs ys = error "not implemented"
+cartesianProductMonad [] _ = []
+cartesianProductMonad _ [] = []
+cartesianProductMonad xs ys = (\x -> (\y -> return (x, y)) =<< ys) =<< xs
 
 -- А теперь с использованием do notation
 cartesianProductDoNotation :: [a] -> [b] -> [(a,b)]
-cartesianProductDoNotation xs ys = error "not implemented"
+cartesianProductDoNotation xs ys = do
+  x <- xs
+  y <- ys
+  return (x, y)
 
 -- </Задачи для самостоятельного решения>
 
@@ -247,8 +254,14 @@ data Optional a = Some a | None deriving (Eq, Show, Functor)
 -}
 
 instance Applicative Optional where
+  pure = Some
+  _ <*> None = None
+  None <*> _ = None
+  (Some a) <*> (Some b) = Some (a b)
 
 instance Monad Optional where
+  None   >>= _ = None
+  Some x >>= f = f x
 
 {-
   Реализуйте instance класса Monad для List
@@ -269,6 +282,9 @@ append Nil ys = ys
 append ((:.) x xs) ys = (:.) x (append xs ys)
 
 instance Applicative List where
+  pure x = x :. Nil
+  (f :. fs) <*> xs = append (fmap f xs) (fs <*> xs)
+  _ <*> _  = Nil
 
 -- понадобится для >>=
 concat' :: List (List a) -> List a
@@ -276,6 +292,7 @@ concat' Nil = Nil
 concat' ((:.) x xs) = append x (concat' xs)
 
 instance Monad List where
+  xs >>= f = concat' $ fmap f xs
 
 -- </Задачи для самостоятельного решения>
 
