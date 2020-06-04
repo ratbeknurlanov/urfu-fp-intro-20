@@ -365,8 +365,13 @@ instance ShowAll xs => Show (HList xs) where
 -- <Задачи для самостоятельного решения>
 
 -- Реализуйте instance Eq для HList
-instance Eq (HList xs) where
- (==) = error "not implemented"
+type family EqAll (xs :: [Type]) :: Constraint where
+  EqAll '[] = ()
+  EqAll (x ': xs) = (Eq x, EqAll xs)
+
+instance EqAll xs => Eq (HList xs) where
+ HNil == HNil = True
+ (HCons x xs) == (HCons y ys) = x == y && xs == ys
 
 -- </Задачи для самостоятельного решения>
 
@@ -486,12 +491,12 @@ instance Eq (HList xs) where
   Хотим создать список заданного размера. Как мы можем это сделать?
 
   Примерное поведение:
-  
+
     Nil :: List a 0
     Cons 2 Nil :: List Integer 1
     Cons 3 $ Cons 2 Nil :: List Integer 2
     ...
-  
+
   Ниже рассмотрим как получить такое поведение.
 -}
 
@@ -502,7 +507,7 @@ instance Eq (HList xs) where
     1 = Succ Zero
     2 = Succ $ Succ Zero
     ...
--} 
+-}
 data Nat = Zero | Succ Nat
   deriving (Eq, Show)
 
@@ -551,7 +556,7 @@ data SNat :: Nat -> Type where
 
   Синглтон позволяет нам иметь runtime версию типа. Имея терм SZero,
   мы можем вызывать функцию, которая ожидает тип SNat 'Zero, и так далее по индукции.
-  
+
   Заметим, что конструкторы SNat повторяют конструкторы Nat. И для каждого
   типа `SNat n` (то есть полностью примененного, не ожидающего аргумент),
   существует только один терм (кроме undefined):
@@ -561,7 +566,7 @@ data SNat :: Nat -> Type where
 
   Именно поэтому SNat называется синглтоном. Он повторяет структуру Nat, а
   конструкторы Nat изоморфны типам, которые параметризуют синглтон:
-  
+
     Zero <-> 'Zero
     Succ <-> 'Succ
 -}
@@ -599,7 +604,7 @@ instance Show a => Show (Vec a n) where
     VNil -> "nil"
     (VCons x xs) -> show x ++ " : " ++ show xs
 
-data SomeVec a where 
+data SomeVec a where
   SomeVec :: Vec a n -> SomeVec a
 
 instance Show a => Show (SomeVec a) where
@@ -649,7 +654,8 @@ getAt (SSucc m) (VCons _ (VCons x xs)) = getAt m (VCons x xs)
 
 -- Напишите аналог zip для Vec n
 vzip :: Vec a n -> Vec b n -> Vec (a, b) n
-vzip = error "not implemented"
+vzip VNil VNil = VNil
+vzip (VCons x xs) (VCons y ys) = VCons (x, y) $ vzip xs ys
 -- </Задачи для самостоятельного решения>
 
 {- printf
